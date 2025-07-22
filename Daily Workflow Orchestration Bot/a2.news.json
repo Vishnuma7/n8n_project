@@ -1,0 +1,178 @@
+{
+  "name": "a2.news",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=content :  {{ $json.news }}",
+        "options": {
+          "systemMessage": "=You are an AI assistant. Your task is to extract and format the top 3 news headlines from the input text.\n\n##Tools\ntavily : use it for search the content.\n\n🎯 Output Instructions:\n- Return **only** the 3 top headlines.\n- Format each headline as a bullet point starting with `*`.\n- **Do not include** any labels like \"Headline1\", \"Title:\", etc.\n- Do not return anything other than the 3 bullet points.\n\n📦 Example Output:\n* Government approves new tech policy for startups  \n* Heavy rainfall disrupts trains in northern India  \n* India wins final ODI against Australia\n\nBegin when ready.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        60,
+        -100
+      ],
+      "id": "ef0e14e4-2887-45ae-9dd9-fa68c65a82ff",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        180
+      ],
+      "id": "275f939c-3d58-409b-ab63-c4e4aef9d5c2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "DFErF3qdE9zNOFMb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"Todays top news in india \",\n  \"auto_parameters\": false,\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 10,\n  \"time_range\": null,\n  \"days\": 7,\n  \"include_answer\": true,\n  \"include_raw_content\": true,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_favicon\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        160
+      ],
+      "id": "6f8b9204-ff9d-4b4c-8c43-df9a13bc83a0",
+      "name": "tavily"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3c3fccc8-ea63-418f-b0b4-12b323a949ac",
+              "name": "news",
+              "value": "=Top news in {{ $json.country }} with category {{ $json.category }}.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -180,
+        -100
+      ],
+      "id": "56f7489f-5025-4603-80ce-8486723618f0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "country"
+            },
+            {
+              "name": "category"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -440,
+        -100
+      ],
+      "id": "05348ac0-f2b0-4935-a06b-7210b08ec2de",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5a948b85-7c58-474e-a158-1dc5933f09b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92a1209778d6dee8bd241150f0b212778180b5363062bc71fb4820d96fa6fa10"
+  },
+  "id": "NYEXvxo6ukPPF0Xe",
+  "tags": []
+}

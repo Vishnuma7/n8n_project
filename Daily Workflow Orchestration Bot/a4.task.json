@@ -1,0 +1,155 @@
+{
+  "name": "a4.task",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        -40
+      ],
+      "id": "3f94f9bb-320e-4681-9c8c-513893803e70",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1tk_aJCDGCdgvfur1TdM0SkUgTwHzPPlxk_pqBVletDc",
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tk_aJCDGCdgvfur1TdM0SkUgTwHzPPlxk_pqBVletDc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tk_aJCDGCdgvfur1TdM0SkUgTwHzPPlxk_pqBVletDc/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "date",
+              "lookupValue": "={{$now.format(\"D\")}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -400,
+        -40
+      ],
+      "id": "02f1f049-afdb-447f-ada4-d13540b737b5",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dWRWDMpYs7XUAffP",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a62caaf8-f48d-43bd-926c-2bdb230ce346",
+              "name": "task",
+              "value": "={{ $('Get row(s) in sheet').item.json.task }}",
+              "type": "string"
+            },
+            {
+              "id": "1b923846-f89d-4d6c-b050-f5a267c698b8",
+              "name": "stauts",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "0882fa1c-5414-4543-9e2b-39335b9fc121",
+              "name": "date",
+              "value": "={{ $json.date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        40,
+        -40
+      ],
+      "id": "6ecc770a-5a55-40c9-b97d-4ccb8ee8ce5b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toISOString().split('T')[0];\n\nreturn items.filter(item => {\n  const date = new Date(item.json.date).toISOString().split('T')[0];\n  return date === today;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        -40
+      ],
+      "id": "9169709a-257f-4388-bae2-11df943bbe9d",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3acd98d6-12e9-444f-a8fd-2a43c8ef0db4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92a1209778d6dee8bd241150f0b212778180b5363062bc71fb4820d96fa6fa10"
+  },
+  "id": "LGb4RQOjwz8c9bpv",
+  "tags": []
+}

@@ -1,0 +1,408 @@
+{
+  "name": "a",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Daily Workflow Orchestration Bot\n###### This will be a powerful morning assistant that runs daily and sends you a custom message like:\n\n🌤️ Weather: Sunny, 31°C\n📰 News: “India's markets hit all-time high...”\n✅ Tasks: 3 items for today\n💬 Quote: \"Success is not final, failure is not fatal...\"\nSent to Telegram every morning at 7 AM ",
+        "height": 220,
+        "width": 760,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -540,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "dba41d84-d935-45d6-b770-cf52c7969b7a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        120
+      ],
+      "id": "0c1035ac-a4ba-4174-a067-640756da2413",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=city:  {{ $json.city }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant. your job is to call all the sub workflows listed below.\n\n## sub workflows : \nweather: check with the input city.\nnews : call this subworkflow after weather sub workflow. use country as india and category as general.\nquote : call this subworkflow after completeing news sub workflow.\ntask: call this subworkflow after quote sub workflow.\n\n## output instruction:\nweather: output only from weather sub workflow.\nTop news:  output news sub workflow.\nQuote: output from quote sub workflow.\ntask: output only from task sub workflow.\n\n## example output:\n🌤️ Weather: Sunny, 31°C\n📰 News: \"* India's markets hit all-time high...\"\n💬 Quote: \"Success is not final, failure is not fatal...\"\n✅ Tasks: 3 items for today\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        420,
+        120
+      ],
+      "id": "4411c76f-cd0f-4b3c-8caf-d1de04397b0e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        440
+      ],
+      "id": "8ef87483-719f-4af7-91bc-85c560f8a9db",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "DFErF3qdE9zNOFMb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "11803522-e0e6-4297-8ee8-b11598ca1adc",
+              "name": "city",
+              "value": "thiruvananthapuram",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        120
+      ],
+      "id": "c439ac19-68e2-42b4-a222-eb32964ca7c5",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "description": "call this sub workflow when you want to get news",
+        "workflowId": {
+          "__rl": true,
+          "value": "NYEXvxo6ukPPF0Xe",
+          "mode": "list",
+          "cachedResultName": "a2.news"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "country": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('country', ``, 'string') }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        440
+      ],
+      "id": "525d6d0b-9e06-4384-a79f-058bbd93039c",
+      "name": "news"
+    },
+    {
+      "parameters": {
+        "description": "call this sub workflow when you want to check weather of city.",
+        "workflowId": {
+          "__rl": true,
+          "value": "S7SkYtpjDNrChqlt",
+          "mode": "list",
+          "cachedResultName": "a1.weather"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "city": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('city', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "city"
+          ],
+          "schema": [
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        440
+      ],
+      "id": "046af397-7845-459f-98b8-3817b2664c5d",
+      "name": "weather"
+    },
+    {
+      "parameters": {
+        "description": "call this sub workflow when you want to get quotes.",
+        "workflowId": {
+          "__rl": true,
+          "value": "gLxWiaMEiIla35r5",
+          "mode": "list",
+          "cachedResultName": "a3.quote"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        440
+      ],
+      "id": "a5f31e53-256f-4910-a8e4-f4c8e6cee03e",
+      "name": "quote"
+    },
+    {
+      "parameters": {
+        "url": "https://api.telegram.org/bot7643383462:AAHolaYZfFtr5WNbH74zHO2oOcS2GvajvJg/getUpdates",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        120
+      ],
+      "id": "676624d4-0227-4846-9424-8e1808fb4db6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.result[0].message.from.id }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        120
+      ],
+      "id": "e81400a0-00f0-402e-a939-0344565f11b0",
+      "name": "Send a text message",
+      "webhookId": "aa04ecbb-59d1-4ec0-8029-5c9f1d00102d",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "VyET8d8Wg6hBGYKU",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "call this sub workflow when you want to get quotes.",
+        "workflowId": {
+          "__rl": true,
+          "value": "LGb4RQOjwz8c9bpv",
+          "mode": "list",
+          "cachedResultName": "a4.task"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        760,
+        440
+      ],
+      "id": "1ce4ca56-46b5-461c-9695-48a12ff3cbc8",
+      "name": "task"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "news": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "weather": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "quote": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4dd335ad-6324-4287-ad01-09b6e6b663e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92a1209778d6dee8bd241150f0b212778180b5363062bc71fb4820d96fa6fa10"
+  },
+  "id": "heaGnYiRLimnk6hm",
+  "tags": []
+}

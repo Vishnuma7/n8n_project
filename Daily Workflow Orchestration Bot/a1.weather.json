@@ -1,0 +1,116 @@
+{
+  "name": "a1.weather",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "city"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        0
+      ],
+      "id": "8c655608-a2bc-489c-9d06-4ba97449c5e7",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "http://api.weatherapi.com/v1/current.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "4849d1189e684e0aad3152108251707"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.city }}"
+            },
+            {
+              "name": "aqi",
+              "value": "yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        0
+      ],
+      "id": "0d9bb11f-9de0-4b56-bf0a-cab78e471db8",
+      "name": "weather",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f8997e9-9a4c-4a7b-a57d-f4d25c029e95",
+              "name": "Weather",
+              "value": "=🌤️ {{ $json.location.name }}: {{ $json.current.temp_c}}°C, {{ $json.current.condition.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        0
+      ],
+      "id": "ae03455c-4961-4df9-b661-9c237ddc0e21",
+      "name": "Edit Fields",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "weather": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f2c02bb1-fe45-4c36-8c69-27478f268cc8",
+  "meta": {
+    "instanceId": "92a1209778d6dee8bd241150f0b212778180b5363062bc71fb4820d96fa6fa10"
+  },
+  "id": "S7SkYtpjDNrChqlt",
+  "tags": []
+}

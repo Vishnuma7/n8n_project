@@ -1,0 +1,99 @@
+{
+  "name": "a3.quote",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -600,
+        -80
+      ],
+      "id": "013482f1-c8ef-447e-91ff-75f518c3765a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "https://api.api-ninjas.com/v1/quotes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "/bVMteRdrc7t2AKQTIrOzg==FykLbxaAHs6e65JK"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -320,
+        -80
+      ],
+      "id": "5c0d3833-853e-4bf3-9a90-757cba8b9814",
+      "name": "quote"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38f5eb2d-0042-46f6-a6fe-b284b47e97db",
+              "name": "quote",
+              "value": "==`🌟 Quote of the Day:\n\"{{ $json.quote }}\"\n— {{ $json.author }}`\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -80
+      ],
+      "id": "467e3212-16f9-4981-8b29-e8191b6fd94e",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "quote": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "03a56962-0c25-4c06-8b0e-50f00706f877",
+  "meta": {
+    "instanceId": "92a1209778d6dee8bd241150f0b212778180b5363062bc71fb4820d96fa6fa10"
+  },
+  "id": "gLxWiaMEiIla35r5",
+  "tags": []
+}
