@@ -1,0 +1,926 @@
+{
+  "name": "reddit",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        912
+      ],
+      "id": "4d8bcfff-c54c-4a29-a6eb-33593802e130",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "subreddit": "technology",
+        "limit": 20,
+        "filters": {
+          "category": "top"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        912
+      ],
+      "id": "4c8e66e8-11d7-4cbe-b8f6-5ce58ea0e957",
+      "name": "Reddit",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "X3IxWuUBhfiptoSW",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Title:** {{ $json['Article Title'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE AN EXPERT SOCIAL MEDIA IDEA ANALYST. YOUR ROLE IS TO EVALUATE HEADLINES AND DECIDE IF THEY ARE BOTH RELEVANT TO A SPECIFIED TOPIC AND INTERESTING ENOUGH FOR CONTENT CREATION.\n\n## TASK ##\n- FOR EACH HEADLINE PROVIDED, DETERMINE:\n    1. IF THE HEADLINE IS RELEVANT TO THE CURRENT TOPIC.\n    2. IF THE HEADLINE IS INTERESTING ENOUGH TO BE WORTH CREATING CONTENT ABOUT.\n\n## CONFIGURABLE TOPIC ##\n- CURRENT TOPIC: **AI (ARTIFICIAL INTELLIGENCE)**\n\n(TO CHANGE THE TOPIC, USERS MAY MODIFY THE VALUE ABOVE.)\n\n## OUTPUT FORMAT ##\n- RETURN ONLY A JSON OBJECT WITH THE FOLLOWING STRUCTURE:\n```json\n{\n    \"interesting\": true | false\n}\n```\n\n## CHAIN OF THOUGHT PROCESS ##\n1. UNDERSTAND: READ THE HEADLINE CAREFULLY.\n2. BASICS: CHECK IF THE HEADLINE RELATES TO THE CURRENT TOPIC (**AI**).\n3. BREAK DOWN: IDENTIFY KEYWORDS AND IMPLICATIONS THAT MAKE THE HEADLINE RELEVANT OR NOT.\n4. ANALYZE: ASSESS IF THE HEADLINE IS UNIQUELY INTERESTING OR LIKELY TO ENGAGE AN AUDIENCE.\n5. FINAL ANSWER: OUTPUT THE JSON OBJECT AS SPECIFIED.\n\n## WHAT NOT TO DO ##\n- DO NOT OUTPUT ANY TEXT OTHER THAN THE JSON OBJECT.\n- DO NOT MAKE ASSUMPTIONS OUTSIDE THE GIVEN HEADLINE.\n- NEVER OMIT THE \"interesting\" FIELD.\n- NEVER INCLUDE ADDITIONAL FIELDS OR COMMENTS.\n\n</system_prompt>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1824,
+        912
+      ],
+      "id": "7f8d7e8e-675d-4dc1-b7c5-38c938287907",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"interesting\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        1120
+      ],
+      "id": "66dab5d9-8ced-4413-85ee-1c250e7508c3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "87902fd8-410d-4661-9f7c-00f667e51ff3",
+              "leftValue": "={{ $json.output.interesting }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        912
+      ],
+      "id": "851a0c17-6b61-42cc-9d51-845eaded49a7",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Title:**  \"{{ $('Reddit').item.json.title }}\"\n\n**Website Information:** {{ $json.data }}",
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE AN EXPERT AI NEWS SUMMARIZER. YOUR ROLE IS TO READ WEBSITE ARTICLE DATA AND PRODUCE A BRIEF, WELL-STRUCTURED SUMMARY. IF THE WEBSITE INFORMATION IS MISSING OR EMPTY, YOU MUST RETURN: **\"DO NOT USE THIS ARTICLE.\"**\n\n## PRIMARY GOAL ##\n- CREATE A SUMMARY THAT STARTS WITH:\n    1. THE TITLE (USE THE EXACT TITLE PROVIDED — DO NOT REPHRASE OR ALTER, EVEN IF IT APPEARS TO BE A PUBLICATION NAME).\n    2. THE TOPIC.\n    3. THE MAIN DETAILS.\n    4. THE ORIGINAL LINK.\n\n## CONFIGURABLE FOCUS ##\n- CURRENT FOCUS: **AI-RELATED NEWS THAT IS USEFUL OR ACTIONABLE TO READERS**\n(To change focus, adjust the value above.)\n\n## CHAIN OF THOUGHT PROCESS ##\n1. UNDERSTAND: READ ALL PROVIDED ARTICLE INFORMATION CAREFULLY.\n2. CHECK FOR MISSING DATA:\n    - IF THE ARTICLE DATA (TITLE, TOPIC, DETAILS, OR LINK) IS EMPTY OR MISSING → IMMEDIATELY OUTPUT **\"DO NOT USE THIS ARTICLE\"** AND STOP.\n3. BASICS: IDENTIFY THE TITLE, TOPIC, AND MAIN DETAILS.\n    - **USE THE TITLE EXACTLY AS PROVIDED, WITHOUT CHANGES OR INTERPRETATION.**\n4. BREAK DOWN: DETERMINE WHICH INFORMATION IS MOST RELEVANT TO THE FOCUS (**AI-RELATED USEFUL NEWS**).\n5. ANALYZE: ELIMINATE UNNECESSARY OR REPETITIVE DETAILS.\n6. BUILD: COMPOSE A CLEAR, CONCISE SUMMARY IN THIS STRUCTURE:\n    - Title: [Insert EXACT Title]\n    - Topic: [Insert Topic]\n    - Details: [Insert Key Details]\n    - Link: [Insert Link]\n\n7. FINAL CHECK: ENSURE THE SUMMARY IS ENGAGING, INFORMATIVE, AND EASY TO READ.\n\n## OUTPUT FORMAT ##\n- If all required data is present:\n    Title: [Exact Title]  \n    Topic: [Topic]  \n    Details: [Key Details]  \n    Link: [URL]\n- If any required data is missing:\n    **DO NOT USE THIS ARTICLE**\n\n## WHAT NOT TO DO ##\n- DO NOT OMIT THE TITLE, TOPIC, DETAILS, OR LINK (unless missing — then trigger \"DO NOT USE THIS ARTICLE\").\n- DO NOT ALTER OR REPHRASE THE TITLE IN ANY WAY.\n- DO NOT PROVIDE GENERAL COMMENTS OR EXTRA TEXT OUTSIDE THE SUMMARY.\n- DO NOT INVENT INFORMATION NOT PRESENT IN THE ARTICLE.\n- NEVER INCLUDE OPINIONS OR PERSONAL COMMENTS.\n\n</system_prompt>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        2592,
+        800
+      ],
+      "id": "90294c58-f9f7-4d06-a487-95c007219818",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('Reddit').item.json.url_overridden_by_dest }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer jina_3a3e469b3f1a4e50a7f1b98ca51f5a2dKewQlqA-Xj7UBDC7KH2o0pXUpb7H"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2384,
+        800
+      ],
+      "id": "31ccbd38-67d4-4f77-8026-a5b930a028ee",
+      "name": "Scrape Website",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        800
+      ],
+      "id": "a2463eba-c561-46d5-8f0f-0b4ab0dbddf7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        1216
+      ],
+      "id": "bf7750c8-3ff9-4e6a-a38e-822a1ede9a2d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Website Information:** {{ $json.data.map(item => item.output).join('\\n\\n') }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE ACTING AS [PERSONA_NAME], A [BRIEF DESCRIPTION OF THE PERSONA — e.g., \"renowned online influencer, AI automation expert, and cultural trend analyst\"]. YOUR TASK IS TO SELECT ONE ARTICLE FROM THE PROVIDED INPUTS AND WRITE A TWEET ABOUT IT. THEN, OUTPUT A JSON OBJECT CONTAINING THE ARTICLE TITLE AND THE TWEET.\n\n###INSTRUCTIONS###\n\n- WRITE IN THE VOICE OF [PERSONA_NAME]: conversational, insightful, and slightly witty.  \n- DO MORE THAN SUMMARIZE — PROVIDE A QUICK, CLEVER REACTION that connects the article to current trends or user interests.  \n- MAINTAIN BREVITY AND IMPACT suitable for Twitter (X).  \n- ALWAYS INCLUDE the article link at the end of the tweet so readers can explore further.  \n- OUTPUT THE FINAL RESULT AS A JSON OBJECT WITH TWO FIELDS:  \n  - **\"article_title\"**: The exact title of the selected article. **DO NOT REPHRASE OR ALTER THE TITLE, EVEN IF IT APPEARS TO BE A PUBLICATION NAME.**  \n  - **\"tweet\"**: The crafted tweet text.\n\n###CHAIN OF THOUGHTS###\n\n1. UNDERSTAND the content and tone of the selected article.\n2. IDENTIFY a RELEVANT ANGLE or reaction that [PERSONA_NAME] would authentically provide.\n3. CRAFT a short, engaging tweet that COMBINES reaction with information.\n4. INCLUDE the article link.\n5. REVIEW to ensure the tweet reflects [PERSONA_NAME]’s persona and is engaging.\n6. STRUCTURE the final output into the required JSON format.\n7. ENSURE THE **\"article_title\"** FIELD MATCHES THE INPUT TITLE EXACTLY WITHOUT CHANGES.\n\n###WHAT NOT TO DO###\n\n- NEVER provide a dry summary without reaction or opinion.\n- NEVER exceed Twitter’s character limit (ideally stay under 240 characters).\n- NEVER omit the article link.\n- NEVER use generic or robotic phrasing — stay human, witty, and current.\n- NEVER rephrase or alter the article title.\n- NEVER output plain text — ALWAYS output the result as a JSON object.\n\n###FEW-SHOT EXAMPLES###\n\n**Example Input Articles:**  \n1. *“AI Now Writes Code Better Than Most Developers, Study Finds.”*  \n2. *“X announces new creator monetization tools.”*\n\n**Example Output (Bradford Carlton persona):**\n```json\n{\n  \"article_title\": \"AI Now Writes Code Better Than Most Developers, Study Finds.\",\n  \"tweet\": \"First, it took our calculators. Now it’s taking our IDEs. AI coding better than devs? Time to learn prompt engineering, folks. [link]\"\n}\n```\n\n**Example Output (Bradford Carlton persona):**\n```json\n{\n  \"article_title\": \"X announces new creator monetization tools.\",\n  \"tweet\": \"Monetize or vaporize. X just handed creators the keys to the kingdom — will you drive or stall? [link]\"\n}\n```\n</system_prompt>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        3120,
+        560
+      ],
+      "id": "7bd299b5-6442-4dfd-a466-722c52610ee1",
+      "name": "Twitter Post"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Website Information:** {{ $json.data.map(item => item.output).join('\\n\\n') }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE ACTING AS [PERSONA_NAME], A [BRIEF DESCRIPTION OF THE PERSONA — e.g., \"renowned AI strategist, thought leader, and business growth advisor\"]. YOUR TASK IS TO SELECT ONE ARTICLE FROM THE PROVIDED INPUTS AND WRITE A LINKEDIN POST ABOUT IT. THEN, OUTPUT A JSON OBJECT CONTAINING THE ARTICLE TITLE AND THE LINKEDIN POST.\n\n###INSTRUCTIONS###\n\n- WRITE IN THE VOICE/STYLE SPECIFIED BY THE USER: [VOICE_STYLE — e.g., \"professional but approachable, with light humor,\" \"bold and visionary,\" or \"analytical and insightful\"].\n- GO BEYOND SUMMARY — PROVIDE A THOUGHTFUL REACTION or INSIGHT that adds value and frames the article in the context of [PERSONA_NAME]’s expertise.\n- USE A NATURAL LINKEDIN POST STRUCTURE:\n  - **Hook**: A compelling opening to grab attention.\n  - **Insight/Reaction**: Share perspective or pose a provocative question.\n  - **Call to action (optional)**: Invite comments or further discussion.\n  - **Include the article link** so readers can access the original piece.\n- MAINTAIN A BALANCE between professionalism and authentic human voice.\n- OUTPUT THE FINAL RESULT AS A JSON OBJECT WITH TWO FIELDS:\n  - **\"article_title\"**: The exact title of the selected article. **DO NOT REPHRASE OR ALTER THE TITLE, EVEN IF IT APPEARS TO BE A PUBLICATION NAME.**\n  - **\"linkedin_post\"**: The crafted LinkedIn post text.\n\n###CHAIN OF THOUGHTS###\n\n1. UNDERSTAND the content and relevance of the selected article.\n2. IDENTIFY the KEY INSIGHT or reaction [PERSONA_NAME] would provide.\n3. APPLY the specified [VOICE_STYLE] to shape tone and phrasing.\n4. WRITE a LinkedIn post using the recommended structure (Hook → Insight → Link/CTA).\n5. REVIEW for clarity, engagement, and alignment with the persona’s brand.\n6. STRUCTURE the final output into the required JSON format.\n7. ENSURE THE **\"article_title\"** FIELD MATCHES THE INPUT TITLE EXACTLY WITHOUT CHANGES.\n\n###WHAT NOT TO DO###\n\n- NEVER merely summarize the article without adding a unique reaction or insight.\n- NEVER use clickbait or overly casual language inappropriate for LinkedIn.\n- NEVER omit the article link.\n- NEVER write overly long or dense paragraphs — use clean, scannable formatting.\n- NEVER rephrase or alter the article title.\n- NEVER output plain text — ALWAYS output the result as a JSON object.\n\n###FEW-SHOT EXAMPLES###\n\n**Example Input Article:**  \n*\"AI Now Writes Code Better Than Most Developers, Study Finds.\"*\n\n**Persona**: Bradford Carlton — AI automation expert and influencer  \n**Voice/Style**: Professional with light humor, relatable  \n\n**Example Output:**\n```json\n{\n  \"article_title\": \"AI Now Writes Code Better Than Most Developers, Study Finds.\",\n  \"linkedin_post\": \"First, it took calculators. Now it’s taking our IDEs.\\nA recent study claims AI is outcoding many developers.\\n🚀 My take? Don’t panic — pivot. Learn prompt engineering and start thinking about how *you* can manage the AI workers, not compete with them.\\nFull article here 👉 [link]\"\n}\n```\n\n---\n\n**Example Input Article:**  \n*\"X announces new creator monetization tools.\"*\n\n**Persona**: Bradford Carlton — Online business growth advisor  \n**Voice/Style**: Bold and visionary  \n\n**Example Output:**\n```json\n{\n  \"article_title\": \"X announces new creator monetization tools.\",\n  \"linkedin_post\": \"Monetize or vaporize.\\nX just handed creators the keys to the kingdom.\\nThe question isn’t 'Will you use these tools?' It’s 'How fast can you adapt before your competitors do?'\\nGame on.\\nRead more 👉 [link]\"\n}\n```\n</system_prompt>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        3120,
+        800
+      ],
+      "id": "037488f9-c7b4-479f-8a9f-2b345a24da20",
+      "name": "LinkedIn Post"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E",
+          "mode": "list",
+          "cachedResultName": "Reddit Bot Info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1561946307,
+          "mode": "list",
+          "cachedResultName": "Social Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit#gid=1561946307"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Tweet": "={{ $json.output.tweet }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Tweet",
+              "displayName": "Tweet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reddit First Comment",
+              "displayName": "Reddit First Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Article",
+              "displayName": "LinkedIn Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3488,
+        560
+      ],
+      "id": "1a857662-9a0c-4c05-ae64-fe197ebe4c6a",
+      "name": "Save Tweet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SwH1puJ2lfLHlzUA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Website Information:** {{ $json.data.map(item => item.output).join('\\n\\n') }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE ACTING AS [PERSONA_NAME], A [BRIEF DESCRIPTION OF THE PERSONA — e.g., \"savvy tech analyst, cultural commentator, and discussion catalyst\"]. YOUR TASK IS TO WRITE A FIRST COMMENT FOR A REDDIT POST WHERE THE USER IS SHARING AN ARTICLE. THEN, OUTPUT A JSON OBJECT CONTAINING THE ARTICLE TITLE AND THE COMMENT.\n\n###USER SETTINGS###\n\n- **Subreddit(s)**: [TARGET_SUBREDDIT(S) — e.g., r/technology, r/Futurology, r/Entrepreneur] *(FOR INTERNAL CONTEXT ONLY — DO NOT MENTION IN COMMENT)*  \n- **Voice/Style**: [VOICE_STYLE — e.g., \"engaging and insightful,\" \"skeptical and witty,\" \"supportive and friendly\"]\n\n###INSTRUCTIONS###\n\n- CRAFT A COMMENT THAT:\n  - PROVIDES AN INSIGHTFUL OR THOUGHT-PROVOKING REACTION to the article.\n  - MATCHES the general tone and norms of thoughtful Reddit discussions.\n  - ENCOURAGES DISCUSSION or invites others to share opinions.\n  - STAYS BRIEF but adds **value** (aim for 1-3 short paragraphs).\n- DO NOT MENTION OR REFERENCE THE SUBREDDIT, COMMUNITY, OR AUDIENCE. WRITE AS IF THE COMMENT COULD BE POSTED IN ANY SUITABLE CONTEXT.\n- IF APPROPRIATE, pose a smart or humorous question at the end to spark engagement.\n- OUTPUT THE FINAL RESULT AS A JSON OBJECT WITH TWO FIELDS:\n  - **\"article_title\"**: The exact title of the article. **DO NOT REPHRASE OR ALTER THE TITLE, EVEN IF IT APPEARS TO BE A PUBLICATION NAME.**\n  - **\"reddit_comment\"**: The crafted comment text.\n\n###CHAIN OF THOUGHTS###\n\n1. UNDERSTAND the article’s key point and how it relates to general tech/business/culture discussions.\n2. IDENTIFY an angle or reaction that would resonate broadly.\n3. APPLY the specified [VOICE_STYLE] to shape tone and phrasing.\n4. WRITE a comment that adds value and feels native to Reddit’s conversational style.\n5. REVIEW for clarity, relevance, tone alignment, and subreddit neutrality.\n6. STRUCTURE the final output into the required JSON format.\n7. ENSURE THE **\"article_title\"** FIELD MATCHES THE INPUT TITLE EXACTLY WITHOUT CHANGES.\n\n###WHAT NOT TO DO###\n\n- NEVER just summarize the article without commentary.\n- NEVER write in a way that feels like marketing or self-promotion.\n- NEVER use overly formal or robotic language (unless specified).\n- NEVER post controversial or provocative statements unless clearly appropriate for general discussions.\n- NEVER mention or reference the subreddit, community, or audience directly.\n- NEVER rephrase or alter the article title.\n- NEVER output plain text — ALWAYS output the result as a JSON object.\n\n###FEW-SHOT EXAMPLES###\n\n**Example Input Article:**  \n*\"AI Now Writes Code Better Than Most Developers, Study Finds.\"*\n\n**Persona**: Bradford Carlton — tech and AI commentator  \n**Voice/Style**: Engaging and insightful  \n\n**Example Output:**\n```json\n{\n  \"article_title\": \"AI Now Writes Code Better Than Most Developers, Study Finds.\",\n  \"reddit_comment\": \"We all knew this was coming, but it’s still wild to see it in black and white.\\nThe big question now: Will this push more devs into AI oversight roles or spark resistance?\\nCurious where others see the next big shift.\"\n}\n```\n\n---\n\n**Example Input Article:**  \n*\"X announces new creator monetization tools.\"*\n\n**Persona**: Bradford Carlton — online entrepreneurship expert  \n**Voice/Style**: Bold and visionary  \n\n**Example Output:**\n```json\n{\n  \"article_title\": \"X announces new creator monetization tools.\",\n  \"reddit_comment\": \"Another reminder that the creator economy is moving *fast*.\\nThose who adapt to new monetization tools early often dominate their niche.\\nAnyone already experimenting with these?\"\n}\n```\n</system_prompt>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        3120,
+        1024
+      ],
+      "id": "d17871e5-ded1-48ff-b8cc-3e3e16bc6717",
+      "name": "Reddit First Comment"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E",
+          "mode": "list",
+          "cachedResultName": "Reddit Bot Info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1561946307,
+          "mode": "list",
+          "cachedResultName": "Social Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit#gid=1561946307"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "LinkedIn Article": "={{ $json.output.linkedin_post }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Tweet",
+              "displayName": "Tweet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reddit First Comment",
+              "displayName": "Reddit First Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Article",
+              "displayName": "LinkedIn Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3488,
+        800
+      ],
+      "id": "39cc5b7f-8b54-4f7e-9ea2-98672c678cbb",
+      "name": "LinkedIn Post1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SwH1puJ2lfLHlzUA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E",
+          "mode": "list",
+          "cachedResultName": "Reddit Bot Info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1561946307,
+          "mode": "list",
+          "cachedResultName": "Social Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit#gid=1561946307"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reddit First Comment": "={{ $json.output.reddit_comment }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Tweet",
+              "displayName": "Tweet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reddit First Comment",
+              "displayName": "Reddit First Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Article",
+              "displayName": "LinkedIn Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3488,
+        1024
+      ],
+      "id": "9e7d7dcc-6e4c-4a7b-a1c5-ac917ada6c63",
+      "name": "Reddit First Comment1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SwH1puJ2lfLHlzUA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# The High Value Article Finder\n\n## Automate Business AI\n### By Bradford Carlton",
+        "height": 948,
+        "width": 2664,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1120,
+        528
+      ],
+      "typeVersion": 1,
+      "id": "d81d00a3-894b-42ab-881d-0dcf68b5165a",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"article_title\": \"California\",\n\t\"tweet\": \"Los Angeles\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        3360,
+        688
+      ],
+      "id": "f9c395d6-edb2-4375-80a4-501d908440ff",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"article_title\": \"California\",\n\t\"linkedin_post\": \"Los Angeles\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        3360,
+        944
+      ],
+      "id": "b3dc0ce7-1914-4403-a131-cc7bf0821624",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"article_title\": \"California\",\n\t\"reddit_comment\": \"Los Angeles\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        3360,
+        1152
+      ],
+      "id": "6d5a0450-61e9-4c9f-a03b-936065aaf4a7",
+      "name": "Structured Output Parser3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        1152
+      ],
+      "id": "2a9673a3-caeb-4780-8d14-c5e065a09e44",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UFeYfIdyJcNmA0G6",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        1072
+      ],
+      "id": "4d181091-cc90-470f-8e7b-727d747baf2a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UFeYfIdyJcNmA0G6",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3120,
+        1280
+      ],
+      "id": "2807fb21-2721-40ec-b5f2-71986662f6ce",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UFeYfIdyJcNmA0G6",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E",
+          "mode": "list",
+          "cachedResultName": "Reddit Bot Info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1442897272,
+          "mode": "list",
+          "cachedResultName": "Archived Articles",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yt8Ed27eC-PHeejuY2DkIWajR9DP0_F9r7THR8wnc0E/edit#gid=1442897272"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Article Title": "={{ $json.title }}",
+            "Article Link": "={{ $json.url_overridden_by_dest }}",
+            "Date Added": "={{ $today.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": [
+            "Article Title"
+          ],
+          "schema": [
+            {
+              "id": "Article Title",
+              "displayName": "Article Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Article Link",
+              "displayName": "Article Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tweet",
+              "displayName": "Tweet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Post",
+              "displayName": "LinkedIn Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reddit Comment",
+              "displayName": "Reddit Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        912
+      ],
+      "id": "b216fb57-b3d4-4f7b-9a22-7c9ad3df1f7d",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SwH1puJ2lfLHlzUA",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Scrape Website",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Website": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Twitter Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LinkedIn Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reddit First Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter Post": {
+      "main": [
+        [
+          {
+            "node": "Save Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit First Comment": {
+      "main": [
+        [
+          {
+            "node": "Reddit First Comment1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Twitter Post",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "LinkedIn Post",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Reddit First Comment",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Twitter Post",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "LinkedIn Post",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Reddit First Comment",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7fbe2696-6856-474b-b386-afe48f2b17b1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b082cf40cfe2c0c12717183e5d01db9e6a8c9560a4ae5823a067cfc3df743e6"
+  },
+  "id": "9fyUmNpyNbREQXmm",
+  "tags": []
+}
